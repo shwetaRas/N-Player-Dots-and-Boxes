@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+
+#define MAX_SIZE 50
+void *connection_handler(void *);
+
+int main()
+{
+    int sock_desc;
+    int server_sock;
+    struct sockaddr_in serv_addr;
+    char sbuff[MAX_SIZE],rbuff[MAX_SIZE];
+    pthread_t thread_id;
+
+
+    if((sock_desc = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        printf("Failed creating socket\n");
+
+    bzero((char *) &serv_addr, sizeof (serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv_addr.sin_port = htons(5555);
+
+    if ((server_sock = connect(sock_desc, (struct sockaddr *) &serv_addr, sizeof (serv_addr))) < 0) {
+        printf("Failed to connect to server\n");
+        return -1;
+    }
+
+    printf("Connected successfully - Please enter string\n");
+
+    if( pthread_create( &thread_id , NULL , connection_handler , (void*) &server_sock) > 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+    printf("After thread");
+
+
+
+   /* while(fgets(sbuff, MAX_SIZE , stdin)!=NULL)
+    {
+      send(sock_desc,sbuff,strlen(sbuff),0);
+    }*/
+
+    close(sock_desc);
+    return 0;
+
+}
+
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+    int read_size;
+    char server_message[2000];
+
+	
+   if((read_size = recv(sock , server_message , 2000 , 0)) <= 0)
+	printf("Error");
+   else
+	printf("%s", server_message);
+
+    /*while( (read_size = recv(sock , server_message , 2000 , 0)) > 0 )
+    {
+        //end of string marker
+        server_message[read_size] = '\0';
+        
+        printf("%s", server_message);
+        //Send the message back to client
+        //write(sock , client_message , strlen(client_message));
+        
+        //clear the message buffer
+        memset(server_message, 0, 2000);
+    }
+
+    if(read_size == 0)
+    {
+        puts("Server disconnected");
+        fflush(stdout);
+    }
+    else if(read_size == -1)
+    {
+        perror("recv failed");
+    }*/
+         
+    return 0;
+}
